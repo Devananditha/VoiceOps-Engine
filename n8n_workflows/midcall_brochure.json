@@ -1,0 +1,179 @@
+{
+  "name": "VoiceOps — Mid-Call Brochure Dispatch",
+  "nodes": [
+    {
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "voiceops-midcall",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "midcall",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0001-0001-0001-000000000002",
+      "name": "Extract Tool Call Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 300],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "field-001",
+              "name": "tool_name",
+              "value": "={{ $json.body.message?.toolCallList?.[0]?.function?.name ?? $json.body.toolCall?.function?.name ?? $json.body.name ?? 'unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "field-002",
+              "name": "customer_number",
+              "value": "={{ $json.body.message?.call?.customer?.number ?? $json.body.customer?.number ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "field-003",
+              "name": "call_id",
+              "value": "={{ $json.body.message?.call?.id ?? $json.body.callId ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "field-004",
+              "name": "raw_payload",
+              "value": "={{ JSON.stringify($json.body) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1b2c3d4-0001-0001-0001-000000000003",
+      "name": "Send WhatsApp Brochure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.twilio.com/2010-04-01/Accounts/YOUR_TWILIO_ACCOUNT_SID/Messages.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "From",
+              "value": "whatsapp:YOUR_TWILIO_SANDBOX_NUMBER"
+            },
+            {
+              "name": "To",
+              "value": "whatsapp:{{ $('Extract Tool Call Data').item.json.customer_number }}"
+            },
+            {
+              "name": "Body",
+              "value": "Hi! Thanks for your time on the call. Here's our candidate screening brochure with everything you need to know about our AI recruitment platform: https://your-brochure-link.com/"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0001-0001-0001-000000000004",
+      "name": "Log to Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 480],
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK_URL",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "=:phone: *Mid-call brochure sent!*\n>*Call ID:* {{ $('Extract Tool Call Data').item.json.call_id }}\n>*Customer:* {{ $('Extract Tool Call Data').item.json.customer_number }}\n>*Tool:* {{ $('Extract Tool Call Data').item.json.tool_name }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-0001-0001-0001-000000000005",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [960, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ \"status\": \"ok\", \"message\": \"Brochure dispatched via WhatsApp\" }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          { "node": "Extract Tool Call Data", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Extract Tool Call Data": {
+      "main": [
+        [
+          { "node": "Send WhatsApp Brochure", "type": "main", "index": 0 },
+          { "node": "Log to Slack", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Send WhatsApp Brochure": {
+      "main": [
+        [
+          { "node": "Respond to Webhook", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "voiceops"
+  },
+  "tags": [
+    { "name": "voiceops" },
+    { "name": "mid-call" }
+  ],
+  "notes": "SETUP REQUIRED:\n1. Add a 'HTTP Basic Auth' credential named 'Twilio API' (username = YOUR_TWILIO_ACCOUNT_SID, password = YOUR_TWILIO_AUTH_TOKEN).\n2. Update Send WhatsApp Brochure with your Twilio Account SID, Twilio Sandbox Number, and Brochure Link.\n3. Update Log to Slack with your Slack Incoming Webhook URL.\n4. Activate the workflow, then copy the Webhook URL into your FastAPI .env as N8N_MIDCALL_WEBHOOK_URL."
+}
