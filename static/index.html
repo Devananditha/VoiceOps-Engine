@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoiceOps AI Screener Demo</title>
+  <meta name="description" content="Test the VoiceOps autonomous AI candidate screener live. Dial our inbound number from any phone to interact in real-time." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Tokens ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0b0f1a;
+      --surface:      #111827;
+      --surface-2:    #1a2236;
+      --border:       rgba(99, 130, 255, 0.18);
+      --accent-1:     #6366f1;
+      --accent-2:     #8b5cf6;
+      --accent-glow:  rgba(99, 102, 241, 0.35);
+      --text-primary: #f0f4ff;
+      --text-muted:   #8892aa;
+      --success:      #10b981;
+      --radius:       16px;
+      --radius-sm:    10px;
+      --transition:   0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99,102,241,0.22) 0%, transparent 70%),
+        linear-gradient(rgba(99,130,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,130,255,0.04) 1px, transparent 1px);
+      background-size: 100% 100%, 40px 40px, 40px 40px;
+    }
+
+    /* ── Card ───────────────────────────────────────────────────────────────── */
+    .card {
+      width: 100%;
+      max-width: 500px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 44px;
+      box-shadow:
+        0 0 0 1px rgba(99,102,241,0.08),
+        0 24px 64px rgba(0,0,0,0.55),
+        0 0 80px var(--accent-glow);
+      animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Logo Badge ─────────────────────────────────────────────────────────── */
+    .logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px var(--accent-glow);
+      flex-shrink: 0;
+    }
+
+    .logo-icon svg { width: 22px; height: 22px; }
+
+    .logo-text {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-1);
+    }
+
+    /* ── Heading ────────────────────────────────────────────────────────────── */
+    h1 {
+      font-size: clamp(1.55rem, 4vw, 1.95rem);
+      font-weight: 800;
+      line-height: 1.2;
+      background: linear-gradient(135deg, #e0e7ff 20%, var(--accent-2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      line-height: 1.65;
+      margin-bottom: 36px;
+    }
+
+    /* ── Divider ────────────────────────────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 32px;
+    }
+
+    /* ── Phone Callout Card ──────────────────────────────────────────────────── */
+    .phone-callout {
+      background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.12) 0%,
+        rgba(139, 92, 246, 0.08) 100%);
+      border: 1.5px solid rgba(99, 102, 241, 0.3);
+      border-radius: var(--radius-sm);
+      padding: 32px 28px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle animated shimmer on the card border */
+    .phone-callout::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(
+        135deg,
+        rgba(255,255,255,0.04) 0%,
+        transparent 50%,
+        rgba(255,255,255,0.02) 100%
+      );
+      pointer-events: none;
+    }
+
+    .callout-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-1);
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 99px;
+      padding: 4px 12px;
+      margin-bottom: 20px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: livePulse 1.8s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.6); }
+      50%       { opacity: 0.75; box-shadow: 0 0 0 5px rgba(16,185,129,0); }
+    }
+
+    /* ── Phone number display ───────────────────────────────────────────────── */
+    .phone-number-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .phone-icon-circle {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 28px var(--accent-glow);
+      flex-shrink: 0;
+      animation: ringWiggle 3s ease-in-out infinite;
+    }
+
+    @keyframes ringWiggle {
+      0%, 100% { transform: rotate(0deg); }
+      5%  { transform: rotate(-12deg); }
+      10% { transform: rotate(12deg); }
+      15% { transform: rotate(-8deg); }
+      20% { transform: rotate(0deg); }
+    }
+
+    .phone-icon-circle svg { width: 24px; height: 24px; }
+
+    .phone-number {
+      font-size: clamp(1.7rem, 5vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: var(--text-primary);
+      line-height: 1;
+      /* subtle gradient tint */
+      background: linear-gradient(90deg, #e0e7ff, #c4b5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Tap-to-call link ───────────────────────────────────────────────────── */
+    .tap-to-call {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      margin-bottom: 24px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--accent-1);
+      text-decoration: none;
+      letter-spacing: 0.03em;
+      transition: color var(--transition), opacity var(--transition);
+    }
+
+    .tap-to-call:hover { opacity: 0.8; }
+
+    /* ── Helper instruction ─────────────────────────────────────────────────── */
+    .instruction {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.65;
+      padding: 0 4px;
+    }
+
+    /* ── Steps ──────────────────────────────────────────────────────────────── */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 28px;
+      text-align: left;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .step-text {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .step-text strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────────────────── */
+    .card-footer {
+      margin-top: 36px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .card-footer .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+      50%       { opacity: 0.7; box-shadow: 0 0 0 5px rgba(16,185,129,0); }
+    }
+
+    /* ── Responsive ─────────────────────────────────────────────────────────── */
+    @media (max-width: 540px) {
+      .card { padding: 36px 24px; }
+      .phone-number-wrap { flex-direction: column; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="card" role="main">
+
+    <!-- Logo -->
+    <div class="logo-badge" aria-hidden="true">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5
+                   19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012
+                   0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45
+                   2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45
+                   c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/>
+        </svg>
+      </div>
+      <span class="logo-text">VoiceOps AI</span>
+    </div>
+
+    <!-- Heading -->
+    <h1>Test the AI Screener</h1>
+    <p class="subtitle">
+      Experience our autonomous candidate screener live. No app, no login — just
+      pick up your phone and call the number below.
+    </p>
+
+    <div class="divider" aria-hidden="true"></div>
+
+    <!-- Phone Callout -->
+    <section class="phone-callout" aria-label="Live Voice Demo">
+
+      <div class="callout-label">
+        <span class="live-dot" aria-hidden="true"></span>
+        Live Voice Demo
+      </div>
+
+      <div class="phone-number-wrap">
+        <div class="phone-icon-circle" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5
+                     19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012
+                     0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45
+                     2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45
+                     c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/>
+          </svg>
+        </div>
+        <span class="phone-number" aria-label="Phone number: plus 1 475 666 6177">
+          +1 (475) 666-6177
+        </span>
+      </div>
+
+      <a class="tap-to-call" href="tel:+14756666177" aria-label="Tap to call on mobile">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5
+                   19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012
+                   0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45
+                   2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45
+                   c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/>
+        </svg>
+        Tap to call on mobile
+      </a>
+
+      <p class="instruction">
+        Dial this number from any phone to interact with the autonomous candidate
+        screener in real-time.
+      </p>
+
+      <!-- Steps -->
+      <div class="steps" aria-label="How it works">
+        <div class="step">
+          <div class="step-num" aria-hidden="true">1</div>
+          <p class="step-text">
+            <strong>Call the number above</strong> from any mobile or landline — no special setup required.
+          </p>
+        </div>
+        <div class="step">
+          <div class="step-num" aria-hidden="true">2</div>
+          <p class="step-text">
+            <strong>Speak naturally.</strong> The AI will ask screening questions, handle objections, and adapt in real-time.
+          </p>
+        </div>
+        <div class="step">
+          <div class="step-num" aria-hidden="true">3</div>
+          <p class="step-text">
+            <strong>Review the analysis</strong> — after the call, the transcript is scored and forwarded automatically.
+          </p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Footer -->
+    <div class="card-footer">
+      <span class="dot" title="Service online" aria-hidden="true"></span>
+      Powered by VoiceOps &amp; VAPI &nbsp;&middot;&nbsp; API docs at
+      <a href="/docs" style="color:var(--accent-1);text-decoration:none;font-weight:600;">/docs</a>
+    </div>
+
+  </main>
+
+</body>
+</html>
